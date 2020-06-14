@@ -5,11 +5,18 @@ import (
 	"testing"
 )
 
-var col = []string{"apple", "banana", "apple", "cat", "dog"}
-
+func initCollection() []interface{} {
+	var c1 = []string{"apple", "banana", "apple", "cat", "dog"}
+	var c2 = make([]interface{}, len(c1))
+	for i, c := range c1 {
+		c2[i] = c
+	}
+	return c2
+}
 func TestIndex(t *testing.T) {
+	col := initCollection()
 	tests := []struct {
-		col      []string
+		col      []interface{}
 		target   string
 		expected int
 	}{
@@ -32,20 +39,44 @@ func TestIndex(t *testing.T) {
 }
 
 func TestExists(t *testing.T) {
+	col := initCollection()
 	tests := []struct {
-		col      []string
-		p        func(string) bool
+		col      []interface{}
+		p        func(interface{}) bool
 		expected bool
 	}{
-		{col, func(s string) bool { return len(s) < 3 }, false},
-		{col, func(s string) bool { return len(s) >= 3 }, true},
-		{col, func(s string) bool { return s == "cat" }, true},
+		{col, func(s interface{}) bool { return s == "kitten" }, false},
+		{col, func(s interface{}) bool { return s == "cat" }, true},
+		{col, func(s interface{}) bool { s2, _ := s.(string); return len(s2) >= 3 }, true},
 	}
 
 	for i, test := range tests {
 		testname := fmt.Sprintf("Test %d", i)
 		t.Run(testname, func(t *testing.T) {
 			ans := Exists(test.col, test.p)
+			if ans != test.expected {
+				t.Errorf("Wanted %v, Got %v", test.expected, ans)
+			}
+		})
+	}
+}
+
+func TestForall(t *testing.T) {
+	col := initCollection()
+	tests := []struct {
+		col      []interface{}
+		p        func(interface{}) bool
+		expected bool
+	}{
+		{col, func(s interface{}) bool { return s == "missing" }, false},
+		{col, func(s interface{}) bool { return s == "cat" }, false},
+		{col, func(s interface{}) bool { s2, _ := s.(string); return len(s2) >= 3 }, true},
+	}
+
+	for i, test := range tests {
+		testname := fmt.Sprintf("Test %d", i)
+		t.Run(testname, func(t *testing.T) {
+			ans := Forall(test.col, test.p)
 			if ans != test.expected {
 				t.Errorf("Wanted %v, Got %v", test.expected, ans)
 			}
